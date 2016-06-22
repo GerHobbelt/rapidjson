@@ -1,4 +1,16 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+# Copyright (c) 2016, Ruslan Baratov
+#
+# Licensed under the MIT License (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://opensource.org/licenses/MIT
+#
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 if(POLICY CMP0025)
   # detect Apple's Clang
   cmake_policy(SET CMP0025 NEW)
@@ -145,6 +157,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "XL")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qarch=auto")
 endif()
 
+add_library(rapidjson INTERFACE)
+
 #add extra search paths for libraries and includes
 SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The directory the headers are installed in")
 SET(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE STRING "Directory where lib will install")
@@ -194,10 +208,6 @@ install(FILES readme.md
         DESTINATION "${DOC_INSTALL_DIR}"
         COMPONENT doc)
 
-install(DIRECTORY include/rapidjson
-    DESTINATION "${INCLUDE_INSTALL_DIR}"
-    COMPONENT dev)
-
 install(DIRECTORY example/
     DESTINATION "${DOC_INSTALL_DIR}/examples"
     COMPONENT examples
@@ -207,42 +217,51 @@ install(DIRECTORY example/
     PATTERN "Makefile" EXCLUDE
     PATTERN "cmake_install.cmake" EXCLUDE)
 
-# Provide config and version files to be used by other applications
-# ===============================
+### Install ###
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
-################################################################################
-# Export package for use from the build tree
-EXPORT( PACKAGE ${PROJECT_NAME} )
+set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+set(include_install_dir "include")
 
-# Create the RapidJSONConfig.cmake file for other cmake projects.
-# ... for the build tree
-SET( CONFIG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-SET( CONFIG_DIR ${CMAKE_CURRENT_BINARY_DIR})
-SET( ${PROJECT_NAME}_INCLUDE_DIR "\${${PROJECT_NAME}_SOURCE_DIR}/include" )
+set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+set(targets_export_name "${PROJECT_NAME}Targets")
+set(namespace "${PROJECT_NAME}::")
 
-CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake @ONLY )
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}ConfigVersion.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake @ONLY)
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${version_config}" COMPATIBILITY SameMajorVersion
+)
 
-# ... for the install tree
-SET( CMAKECONFIG_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME} )
-FILE( RELATIVE_PATH REL_INCLUDE_DIR
-    "${CMAKECONFIG_INSTALL_DIR}"
-    "${CMAKE_INSTALL_PREFIX}/include" )
+# Note: use 'targets_export_name'
+configure_package_config_file(
+    "cmake/Config.cmake.in"
+    "${project_config}"
+    INSTALL_DESTINATION "${config_install_dir}"
+)
 
-SET( ${PROJECT_NAME}_INCLUDE_DIR "\${${PROJECT_NAME}_CMAKE_DIR}/${REL_INCLUDE_DIR}" )
-SET( CONFIG_SOURCE_DIR )
-SET( CONFIG_DIR )
-CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake @ONLY )
+install(
+    TARGETS rapidjson
+    EXPORT "${targets_export_name}"
+    COMPONENT dev
+    INCLUDES DESTINATION "${include_install_dir}"
+)
 
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake"
-        DESTINATION ${CMAKECONFIG_INSTALL_DIR} )
+install(
+    DIRECTORY "include/rapidjson"
+    DESTINATION "${include_install_dir}"
+    COMPONENT dev
+)
 
-# Install files
-INSTALL(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION "${CMAKE_INSTALL_DIR}"
-    COMPONENT dev)
+install(
+    FILES "${project_config}" "${version_config}"
+    DESTINATION "${config_install_dir}"
+    COMPONENT dev
+)
+
+install(
+    EXPORT "${targets_export_name}"
+    NAMESPACE "${namespace}"
+    DESTINATION "${config_install_dir}"
+    COMPONENT dev
+)
