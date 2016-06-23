@@ -30,7 +30,7 @@ if (CMAKE_VERSION VERSION_LESS 3.0)
     PROJECT(RapidJSON CXX)
 else()
     cmake_policy(SET CMP0048 NEW)
-    PROJECT(RapidJSON VERSION "${LIB_VERSION_STRING}" LANGUAGES CXX)
+    PROJECT(RapidJSON VERSION "${LIB_VERSION_STRING}")
 endif()
 
 # compile in release with debug info mode by default
