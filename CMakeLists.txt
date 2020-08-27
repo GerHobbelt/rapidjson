@@ -59,10 +59,8 @@ option(RAPIDJSON_BUILD_UBSAN "Build rapidjson with undefined behavior sanitizer 
 
 option(RAPIDJSON_ENABLE_INSTRUMENTATION_OPT "Build rapidjson with -march or -mcpu options" ON)
 
-option(RAPIDJSON_HAS_STDSTRING "" OFF)
-if(RAPIDJSON_HAS_STDSTRING)
-    add_definitions(-DRAPIDJSON_HAS_STDSTRING)
-endif()
+option(RAPIDJSON_HAS_STDSTRING "Define RAPIDJSON_HAS_STDSTRING as 1" OFF)
+option(RAPIDJSON_NOMEMBERITERATORCLASS "Define RAPIDJSON_NOMEMBERITERATORCLASS" OFF)
 
 option(RAPIDJSON_USE_MEMBERSMAP "" OFF)
 if(RAPIDJSON_USE_MEMBERSMAP)
@@ -160,6 +158,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "XL")
 endif()
 
 add_library(rapidjson INTERFACE)
+
+if(RAPIDJSON_HAS_STDSTRING)
+    target_compile_definitions(rapidjson INTERFACE RAPIDJSON_HAS_STDSTRING=1)
+endif()
+
+if(RAPIDJSON_NOMEMBERITERATORCLASS)
+    target_compile_definitions(rapidjson INTERFACE RAPIDJSON_NOMEMBERITERATORCLASS)
+endif()
+
 
 #add extra search paths for libraries and includes
 SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The directory the headers are installed in")
