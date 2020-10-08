@@ -2,7 +2,7 @@
 
 name = 'rapidjson'
 
-version = '1.0.4+ta.1.0.0'
+version = '1.0.4-ta.1.1.0'
 
 authors = [
     'benjamin.skinner',
@@ -29,7 +29,7 @@ variants = [
 def commands():
 
      # Split and store version and package version
-    split_versions = str(version).split('+')
+    split_versions = str(version).split('-')
     env.RAPIDJSON_VERSION.set(split_versions[0])
     env.RAPIDJSON_PACKAGE_VERSION.set(split_versions[1])
 
