@@ -2,15 +2,11 @@
 
 name = 'rapidjson'
 
-version = '1.0.4-ta.1.1.0'
+version = '1.0.4-ta.1.2.0'
 
 authors = [
     'benjamin.skinner',
     'tencent',
-]
-
-requires = [
-    'python-3'
 ]
 
 @early()
