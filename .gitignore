@@ -1,3 +1,4 @@
+_rez_build/
 /bin/*
 !/bin/data
 !/bin/encodings

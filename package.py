@@ -2,7 +2,7 @@
 
 name = 'rapidjson'
 
-version = '1.0.4-ta.1.2.0'
+version = '1.0.4-ta.1.2.1'
 
 authors = [
     'benjamin.skinner',
@@ -15,11 +15,11 @@ def private_build_requires():
     if 'win' in str(sys.platform):
         return ['visual_studio']
     else:
-        return ['gcc-7']
+        return ['gcc-6']
 
 variants = [
     ['platform-windows', 'arch-x64', 'os-windows-10'],
-    #['platform-linux', 'arch-x64'],
+    ['platform-linux', 'arch-x86_64', 'os-centos-7'],
 ]
 
 def commands():
