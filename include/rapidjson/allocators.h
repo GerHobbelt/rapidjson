@@ -16,6 +16,7 @@
 #define RAPIDJSON_ALLOCATORS_H_
 
 #include "rapidjson.h"
+#include "internal/meta.h"
 
 #include <memory>
 
@@ -158,6 +159,7 @@ class MemoryPoolAllocator {
 
 public:
     static const bool kNeedFree = false;    //!< Tell users that no need to call Free() with this allocator. (concept Allocator)
+    static const bool kRefCounted = true;   //!< Tell users that this allocator is reference counted on copy
 
     //! Constructor with chunkSize.
     /*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
@@ -222,7 +224,6 @@ public:
     {
         RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
         ++rhs.shared_->refcount;
-
         this->~MemoryPoolAllocator();
         baseAllocator_ = rhs.baseAllocator_;
         chunk_capacity_ = rhs.chunk_capacity_;
@@ -230,10 +231,35 @@ public:
         return *this;
     }
 
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    MemoryPoolAllocator(MemoryPoolAllocator&& rhs) RAPIDJSON_NOEXCEPT :
+        chunk_capacity_(rhs.chunk_capacity_),
+        baseAllocator_(rhs.baseAllocator_),
+        shared_(rhs.shared_)
+    {
+        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        rhs.shared_ = 0;
+    }
+    MemoryPoolAllocator& operator=(MemoryPoolAllocator&& rhs) RAPIDJSON_NOEXCEPT
+    {
+        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        this->~MemoryPoolAllocator();
+        baseAllocator_ = rhs.baseAllocator_;
+        chunk_capacity_ = rhs.chunk_capacity_;
+        shared_ = rhs.shared_;
+        rhs.shared_ = 0;
+        return *this;
+    }
+#endif
+
     //! Destructor.
     /*! This deallocates all memory chunks, excluding the user-supplied buffer.
     */
     ~MemoryPoolAllocator() RAPIDJSON_NOEXCEPT {
+        if (!shared_) {
+            // do nothing if moved
+            return;
+        }
         if (shared_->refcount > 1) {
             --shared_->refcount;
             return;
@@ -393,6 +419,16 @@ private:
     SharedData *shared_;        //!< The shared data of the allocator
 };
 
+namespace internal {
+    template<typename, typename = void>
+    struct IsRefCounted :
+        public FalseType
+    { };
+    template<typename T>
+    struct IsRefCounted<T, typename internal::EnableIfCond<T::kRefCounted>::Type> :
+        public TrueType
+    { };
+}
 
 template<typename T, typename A>
 inline T* Realloc(A& a, T* old_p, size_t old_n, size_t new_n)
@@ -412,7 +448,6 @@ inline void Free(A& a, T *p, size_t n = 1)
 {
     static_cast<void>(Realloc<T, A>(a, p, n, 0));
 }
-
 
 #ifdef __GNUC__
 RAPIDJSON_DIAG_PUSH
@@ -448,6 +483,17 @@ public:
         allocator_type(rhs),
         baseAllocator_(rhs.baseAllocator_)
     { }
+
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    StdAllocator(StdAllocator&& rhs) RAPIDJSON_NOEXCEPT :
+        allocator_type(std::move(rhs)),
+        baseAllocator_(std::move(rhs.baseAllocator_))
+    { }
+#endif
+#if RAPIDJSON_HAS_CXX11
+    using propagate_on_container_move_assignment = std::true_type;
+    using propagate_on_container_swap = std::true_type;
+#endif
 
     /* implicit */
     StdAllocator(const BaseAllocator& allocator) RAPIDJSON_NOEXCEPT :
@@ -549,6 +595,10 @@ public:
         deallocate<value_type>(p, n);
     }
 
+#if RAPIDJSON_HAS_CXX11
+    using is_always_equal = std::is_empty<BaseAllocator>;
+#endif
+
     template<typename U>
     bool operator==(const StdAllocator<U, BaseAllocator>& rhs) const RAPIDJSON_NOEXCEPT
     {
@@ -561,6 +611,8 @@ public:
     }
 
     //! rapidjson Allocator concept
+    static const bool kNeedFree = BaseAllocator::kNeedFree;
+    static const bool kRefCounted = internal::IsRefCounted<BaseAllocator>::Value;
     void* Malloc(size_t size)
     {
         return baseAllocator_.Malloc(size);
