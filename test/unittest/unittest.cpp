@@ -28,7 +28,7 @@ AssertException::~AssertException() throw() {}
 #pragma GCC diagnostic pop
 #endif
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
     std::cout << "RapidJSON v" << RAPIDJSON_VERSION_STRING << std::endl;
