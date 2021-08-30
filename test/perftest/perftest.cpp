@@ -14,7 +14,13 @@
 
 #include "perftest.h"
 
-int main(int argc, const char **argv) {
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_test_perftest_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
 #if _MSC_VER
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
     //void *testWhetherMemoryLeakDetectionWorks = malloc(1);

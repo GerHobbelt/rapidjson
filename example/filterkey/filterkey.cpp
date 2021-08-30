@@ -105,7 +105,14 @@ private:
     std::stack<SizeType> filteredKeyCount_;
 };
 
-int main(int argc, char* argv[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_filter_key_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     if (argc != 2) {
         fprintf(stderr, "filterkey key < input.json > output.json\n");
         return 1;

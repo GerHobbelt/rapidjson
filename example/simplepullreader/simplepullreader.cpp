@@ -37,7 +37,14 @@ private:
     MyHandler& operator=(const MyHandler& noAssignment);
 };
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_simplepullreader_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     const char json[] = " { \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null, \"i\":123, \"pi\": 3.1416, \"a\":[1, 2, 3, 4] } ";
 
     MyHandler handler;

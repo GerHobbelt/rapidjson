@@ -15,7 +15,14 @@
 
 using namespace rapidjson;
 
-int main(int, char*[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_pretty_auto_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
 #ifdef _WIN32
     // Prevent Windows converting between CR+LF and LF
     _setmode(_fileno(stdin), _O_BINARY);    // NEW

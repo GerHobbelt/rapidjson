@@ -28,7 +28,14 @@ AssertException::~AssertException() throw() {}
 #pragma GCC diagnostic pop
 #endif
 
-int main(int argc, const char **argv) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_test_unittests_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     ::testing::InitGoogleTest(&argc, argv);
 
     std::cout << "RapidJSON v" << RAPIDJSON_VERSION_STRING << std::endl;

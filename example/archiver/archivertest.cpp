@@ -280,7 +280,14 @@ void test3() {
 
 //////////////////////////////////////////////////////////////////////////////
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_archiver_test_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     test1();
     test2();
     test3();

@@ -135,7 +135,7 @@ TEST_F(Platform, read) {
 #ifdef _WIN32
 TEST_F(Platform, MapViewOfFile) {
     for (int i = 0; i < kTrialCount; i++) {
-        HANDLE file = CreateFile(filename_, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        HANDLE file = CreateFileA(filename_, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         ASSERT_NE(INVALID_HANDLE_VALUE, file);
         HANDLE mapObject = CreateFileMapping(file, NULL, PAGE_READONLY, 0, length_, NULL);
         ASSERT_NE(INVALID_HANDLE_VALUE, mapObject);

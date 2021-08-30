@@ -127,7 +127,14 @@ static void CreateErrorMessages(const ValueType& errors, size_t depth = 0, const
     }
 }
 
-int main(int argc, char *argv[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_scham_validator_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     if (argc != 2) {
         fprintf(stderr, "Usage: schemavalidator schema.json < input.json\n");
         return EXIT_FAILURE;

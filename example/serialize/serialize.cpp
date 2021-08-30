@@ -150,7 +150,14 @@ private:
 Employee::~Employee() {
 }
 
-int main(int, char*[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_serialize_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     std::vector<Employee> employees;
 
     employees.push_back(Employee("Milo YIP", 34, true));

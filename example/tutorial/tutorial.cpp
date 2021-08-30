@@ -8,7 +8,14 @@
 using namespace rapidjson;
 using namespace std;
 
-int main(int, char*[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_tutorial_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     ////////////////////////////////////////////////////////////////////////////
     // 1. Parse a JSON text string to a document.
 

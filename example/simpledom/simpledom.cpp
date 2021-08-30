@@ -8,7 +8,14 @@
 
 using namespace rapidjson;
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_simpleDOM_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     // 1. Parse a JSON string into DOM.
     const char* json = "{\"project\":\"rapidjson\",\"stars\":10}";
     Document d;

@@ -136,7 +136,14 @@ private:
     bool completed_;
 };
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_parse_by_parts_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     Document d;
 
     {

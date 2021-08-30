@@ -25,7 +25,14 @@ void traverse(const Value& v, const Pointer& p) {
     }
 }
 
-int main(int, char*[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_traverse_as_pointer_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     char readBuffer[65536];
     FileReadStream is(stdin, readBuffer, sizeof(readBuffer));
 

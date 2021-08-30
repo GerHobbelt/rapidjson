@@ -5,7 +5,14 @@
 using namespace rapidjson;
 using namespace std;
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_simplewriter_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     StringBuffer s;
     Writer<StringBuffer> writer(s);
     

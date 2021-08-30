@@ -186,7 +186,14 @@ private:
     bool hasName_;
 };
 
-int main(int, char*[]) {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_jsonX_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     // Prepare JSON reader and input stream.
     Reader reader;
     char readBuffer[65536];

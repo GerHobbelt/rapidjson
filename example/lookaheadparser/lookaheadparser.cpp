@@ -282,7 +282,14 @@ int LookaheadParser::PeekType() {
 
 //-------------------------------------------------------------------------
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_look_ahead_parser_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     using namespace std;
 
     char json[] = " { \"hello\" : \"world\", \"t\" : true , \"f\" : false, \"n\": null,"

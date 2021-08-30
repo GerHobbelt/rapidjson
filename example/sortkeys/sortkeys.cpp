@@ -22,7 +22,14 @@ struct NameComparator {
     }
 };
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_sortkeys_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     Document d(kObjectType);
     Document::AllocatorType &allocator = d.GetAllocator();
 

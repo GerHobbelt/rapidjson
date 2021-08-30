@@ -86,7 +86,14 @@ static void ParseMessages(const char* json, MessageMap& messages) {
     }
 }
 
-int main() {
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(c, a)			Rjson_example_messagereader_main(c, a)
+#endif
+
+int main(int argc, const char** argv)
+{
     MessageMap messages;
 
     const char* json1 = "{ \"greeting\" : \"Hello!\", \"farewell\" : \"bye-bye!\" }";

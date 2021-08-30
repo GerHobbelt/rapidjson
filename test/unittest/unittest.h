@@ -32,7 +32,9 @@
 #endif
 
 #ifdef _MSC_VER
+#ifndef _CRTDBG_MAP_ALLOC
 #define _CRTDBG_MAP_ALLOC
+#endif
 #include <crtdbg.h>
 #pragma warning(disable : 4996) // 'function': was declared deprecated
 #endif
