@@ -18,7 +18,8 @@ typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
 #define RAPIDJSON_FORCEINLINE __forceinline
 #else
-#include <inttypes.h>
+#include <vxWorks.h>
+//#include <inttypes.h>
 #define RAPIDJSON_FORCEINLINE
 #endif
 #endif // RAPIDJSON_NO_INT64TYPEDEF
