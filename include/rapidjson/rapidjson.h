@@ -168,9 +168,14 @@
 #include "msinttypes/stdint.h"
 #include "msinttypes/inttypes.h"
 #else
+#ifdef __VXWORKS__
+#include <vxWorks.h>
+#include <cwchar>
+#else
 // Other compilers should have this.
 #include <stdint.h>
 #include <inttypes.h>
+#endif
 #endif
 //!@endcond
 #ifdef RAPIDJSON_DOXYGEN_RUNNING
