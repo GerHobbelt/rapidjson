@@ -133,7 +133,19 @@ public:
         return Key(str.data(), SizeType(str.size()));
     }
 #endif
-	
+
+    bool StartObject(const Ch* str, SizeType length, bool copy = false) {
+        if (Key(str, length, copy)) return StartObject();
+        return false;
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    bool StartObject(const std::basic_string<Ch>& str) {
+        if (Key(str)) return StartObject();
+        return false;
+    }
+#endif
+
     bool EndObject(SizeType memberCount = 0) {
         (void)memberCount;
         RAPIDJSON_ASSERT(Base::level_stack_.GetSize() >= sizeof(typename Base::Level)); // not inside an Object
@@ -159,6 +171,18 @@ public:
         new (Base::level_stack_.template Push<typename Base::Level>()) typename Base::Level(true);
         return Base::WriteStartArray();
     }
+
+    bool StartArray(const Ch* str, SizeType length, bool copy = false) {
+        if (Key(str, length, copy)) return StartArray();
+        return false;
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    bool StartArray(const std::basic_string<Ch>& str) {
+        if (Key(str)) return StartArray();
+        return false;
+    }
+#endif
 
     bool EndArray(SizeType memberCount = 0) {
         (void)memberCount;
@@ -186,6 +210,8 @@ public:
     //! Simpler but slower overload.
     bool String(const Ch* str) { return String(str, internal::StrLen(str)); }
     bool Key(const Ch* str) { return Key(str, internal::StrLen(str)); }
+    bool StartObject(const Ch* str) { return StartObject(str, internal::StrLen(str)); }
+    bool StartArray(const Ch* str) { return StartArray(str, internal::StrLen(str)); }
 
     //@}
 
