@@ -1837,6 +1837,7 @@ public:
     float GetFloat() const {
         return static_cast<float>(GetDouble());
     }
+    double GetNumber() const {return GetDouble();}
 
     GenericValue& SetInt(int i)             { this->~GenericValue(); new (this) GenericValue(i);    return *this; }
     GenericValue& SetUint(unsigned u)       { this->~GenericValue(); new (this) GenericValue(u);    return *this; }
