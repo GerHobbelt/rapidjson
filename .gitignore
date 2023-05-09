@@ -23,3 +23,7 @@ Doxyfile
 Doxyfile.zh-cn
 DartConfiguration.tcl
 *.nupkg
+
+# SSE
+_rez_build
+.vscode
