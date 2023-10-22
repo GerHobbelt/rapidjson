@@ -66,4 +66,6 @@ int main(int argc, const char** argv)
 }
 */
 #endif
+
+	return 0;
 }
