@@ -25,6 +25,10 @@
 #include <type_traits>
 #endif
 
+// Win32/MSVC fix
+#undef max
+#undef min
+
 RAPIDJSON_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////////
