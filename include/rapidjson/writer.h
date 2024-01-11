@@ -67,6 +67,7 @@ enum WriteFlag {
     kWriteNoFlags = 0,              //!< No flags are set.
     kWriteValidateEncodingFlag = 1, //!< Validate encoding of JSON strings.
     kWriteNanAndInfFlag = 2,        //!< Allow writing of Infinity, -Infinity and NaN.
+    kWriteReplaceNullChars = 4,     //!< Replace null chars (\0) with unicode replacement character (\xFFFD) in strings.
     kWriteDefaultFlags = RAPIDJSON_WRITE_DEFAULT_FLAGS  //!< Default write flags. Can be customized by defining RAPIDJSON_WRITE_DEFAULT_FLAGS
 };
 
@@ -397,7 +398,12 @@ protected:
         GenericStringStream<SourceEncoding> is(str);
         while (ScanWriteUnescapedString(is, length)) {
             const Ch c = is.Peek();
-            if (!TargetEncoding::supportUnicode && static_cast<unsigned>(c) >= 0x80) {
+            if (RAPIDJSON_UNLIKELY(c == '\0' && (writeFlags & kWriteReplaceNullChars))) {
+                is.Take();
+                // replace with unicode replacement char
+                TargetEncoding::EncodeUnsafe(*os_, 0xFFFD);
+            }
+            else if (!TargetEncoding::supportUnicode && static_cast<unsigned>(c) >= 0x80) {
                 // Unicode escaping
                 unsigned codepoint;
                 if (RAPIDJSON_UNLIKELY(!SourceEncoding::Decode(is, &codepoint)))

@@ -155,6 +155,7 @@ enum ParseFlag {
     kParseTrailingCommasFlag = 128, //!< Allow trailing commas at the end of objects and arrays.
     kParseNanAndInfFlag = 256,      //!< Allow parsing NaN, Inf, Infinity, -Inf and -Infinity as doubles.
     kParseEscapedApostropheFlag = 512,  //!< Allow escaped apostrophe in strings.
+    kParseReplaceNullChars = 1024,      //!< Replace unicode replacement character (\xFFFD) with null chars (\0) in strings.
     kParseDefaultFlags = RAPIDJSON_PARSE_DEFAULT_FLAGS  //!< Default parse flags. Can be customized by defining RAPIDJSON_PARSE_DEFAULT_FLAGS
 };
 
@@ -1003,7 +1004,7 @@ private:
 
         for (;;) {
             // Scan and copy string before "\\\"" or < 0x20. This is an optional optimzation.
-            if (!(parseFlags & kParseValidateEncodingFlag))
+            if (!(parseFlags & (kParseValidateEncodingFlag | kParseReplaceNullChars)))
                 ScanCopyUnescapedString(is, os);
 
             Ch c = is.Peek();
@@ -1056,6 +1057,19 @@ private:
                     RAPIDJSON_PARSE_ERROR(kParseErrorStringMissQuotationMark, is.Tell());
                 else
                     RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, is.Tell());
+            }
+            else if (parseFlags & kParseReplaceNullChars) {
+                const size_t offset = is.Tell();
+                unsigned codepoint;
+                if (RAPIDJSON_UNLIKELY(!SEncoding::Decode(is, &codepoint))) {
+                    RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, offset);
+                }
+                if (codepoint == 0xFFFD) {
+                    // Replace unicode replacement character with null character
+                    TEncoding::Encode(os, 0);
+                } else {
+                    TEncoding::Encode(os, codepoint);
+                }
             }
             else {
                 size_t offset = is.Tell();
