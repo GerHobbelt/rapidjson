@@ -151,11 +151,11 @@ SET(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The direct
 SET(LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE STRING "Directory where lib will install")
 SET(DOC_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/doc/${PROJECT_NAME}" CACHE PATH "Path to the documentation")
 
-IF(UNIX OR CYGWIN)
+#IF(UNIX OR CYGWIN)
     SET(_CMAKE_INSTALL_DIR "${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME}")
-ELSEIF(WIN32)
-    SET(_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/cmake")
-ENDIF()
+#ELSEIF(WIN32)
+#    SET(_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/cmake")
+#ENDIF()
 SET(CMAKE_INSTALL_DIR "${_CMAKE_INSTALL_DIR}" CACHE PATH "The directory cmake files are installed in")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -191,22 +191,26 @@ IF (UNIX OR CYGWIN)
       COMPONENT pkgconfig)
 ENDIF()
 
-install(FILES readme.md
-        DESTINATION "${DOC_INSTALL_DIR}"
-        COMPONENT doc)
+if(RAPIDJSON_BUILD_DOC)
+    install(FILES readme.md
+            DESTINATION "${DOC_INSTALL_DIR}"
+            COMPONENT doc)
+endif()
 
 install(DIRECTORY include/rapidjson
     DESTINATION "${INCLUDE_INSTALL_DIR}"
     COMPONENT dev)
 
-install(DIRECTORY example/
-    DESTINATION "${DOC_INSTALL_DIR}/examples"
-    COMPONENT examples
-    # Following patterns are for excluding the intermediate/object files
-    # from an install of in-source CMake build.
-    PATTERN "CMakeFiles" EXCLUDE
-    PATTERN "Makefile" EXCLUDE
-    PATTERN "cmake_install.cmake" EXCLUDE)
+if(RAPIDJSON_BUILD_DOC)
+    install(DIRECTORY example/
+        DESTINATION "${DOC_INSTALL_DIR}/examples"
+        COMPONENT examples
+        # Following patterns are for excluding the intermediate/object files
+        # from an install of in-source CMake build.
+        PATTERN "CMakeFiles" EXCLUDE
+        PATTERN "Makefile" EXCLUDE
+        PATTERN "cmake_install.cmake" EXCLUDE)
+endif()
 
 # Provide config and version files to be used by other applications
 # ===============================
