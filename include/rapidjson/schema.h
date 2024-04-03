@@ -1351,7 +1351,7 @@ private:
 #endif
 
     struct SchemaArray {
-        SchemaArray() : schemas(), count() {}
+        SchemaArray() : schemas(), begin(), count() {}
         ~SchemaArray() { AllocatorType::Free(schemas); }
         const SchemaType** schemas;
         SizeType begin; // begin index of context.validators
