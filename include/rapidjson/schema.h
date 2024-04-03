@@ -1321,7 +1321,7 @@ public:
     RAPIDJSON_STRING_(DefaultValue, 'd', 'e', 'f', 'a', 'u', 'l', 't')
     RAPIDJSON_STRING_(Schema, '$', 's', 'c', 'h', 'e', 'm', 'a')
     RAPIDJSON_STRING_(Ref, '$', 'r', 'e', 'f')
-    RAPIDJSON_STRING_(Id, 'i', 'd')
+    RAPIDJSON_STRING_(Id, '$', 'i', 'd')
     RAPIDJSON_STRING_(Swagger, 's', 'w', 'a', 'g', 'g', 'e', 'r')
     RAPIDJSON_STRING_(OpenApi, 'o', 'p', 'e', 'n', 'a', 'p', 'i')
     RAPIDJSON_STRING_(ReadOnly, 'r', 'e', 'a', 'd', 'O', 'n', 'l', 'y')
