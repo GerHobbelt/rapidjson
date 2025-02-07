@@ -3,7 +3,7 @@ from conans import ConanFile
 
 class RapidjsonConan(ConanFile):
     name = "rapidjson"
-    version = "1.1.0"
+    version = "6cc3910a10bfe42e23dd8ca21a726d51b571948d"
     url = "https://github.com/Esri/rapidjson/tree/runtimecore"
     license = "https://github.com/Esri/rapidjson/blob/runtimecore/license.txt"
     description = "A fast JSON parser/generator for C++ with both SAX/DOM style API."
