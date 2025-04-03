@@ -2,7 +2,83 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 2.0.2 - 2024-04-03
+*  Fix out of bounds read with kParseValidateEncodingFlag
+*  CMakeLists: include path fix + compatibility.
+*  Fix parsing 0.184467440737095516159 with kParseFullPrecisionFlag
+*  Guard against max being macros in schema.h
+*  Cpp version depended if constexpr schema.h
+*  Cpp depended if constexpr pointer.h
+*  Increase CMake minimum version to 3.5 (fixes #2159)
+*  Fix endif condition to match `NOT MSVC and VALGRIND_FOUND`.
+*  add test for sso optimized string
+*  Fix issue 2307
+*  Fix bug when parsing NaN, Inf with fraction or exponent parts (fixes #2299)
+*  rapidjson.h: add forgotten ppc64 case
+*  Add RAPIDJSON_BUILD_CXX20 option
+*  fix Visual Studio 2022 (using /std:c++20) warning warning C5232: in C++20 this comparison calls ... recursively
+*  tests: Only run valgrind tests if valgrind was found
+*  Fix static_cast in regex.h
+*  Fix comparision of two doubles
+*  Fix schema regex preprocessor include logic
+*  Use correct format for printf
+
+## 2.0.1 - 2023-11-23
+* Add Hasher tests for objects where key eq value
+* Fix swapped high and low offset basis values
+* Fix object hashing in schema
+* unit tests for 'Stringify NaN, Inf as null'
+* Fix: 'Stringify NaN, Inf as null'
+* Rename to fix allocator shadowing
+* Eliminate old style cast warning
+* Fixing printf format warning
+* Merge pull request #1901 from JackBoosY/master
+* Remove empty cross-reference in comment
+* Merge branch 'master' into pr/1901
+* Stringify NaN, Inf as null if needs
+* Avoid ptrdiff between pointers to different allocations
+* Check for __GNUC__ definition
+* Eliminate missing prototypes warning
+* Resolve conflict with Windows header about max macro
+* CMakeLists: fix optflags for ppc
+* Use passed in allocator.
+* Suppress uritest
+* fix #1
+* fix a typo in error.h: literial -> literal
+* do not define operator!= in C++20
+* review comment updates
+* code & tests for openapi 2.0 & 3.0 suppprt
+* small corrections for schema.h
+* attempt to fix SEH
+* tidy up after merge from master
+* fix build break
+* remove unnecessary templating from schema tests
+* correct address.json so tests pass
+* add dump of unexpected schema errors in schematest.cpp
+* corrections
+* initial
+* Update dtoa.h
+* Update allocators.h
+* docs: fix simple typo, perecent -> percent
+* delete unused variable
+* gate definition of symmetric equality operators on impl, not lib
+* fixes for natvis
+* Make schema dtor robust against exceptions
+* Try to fix MSVC build.
+* Include conceptual change from PR 2001.
+* Avoid exit-time destructors.
+* Avoid exit-time destructors.
+* encdedstreamtest: fix use-after-free compile error with gcc-12
+* valuetest: fix potential write of terminating nul past the end of the destination
+* Merge branch 'master' into master
+* Merge pull request #2008 from agate-pris/access-to-allocator-types
+* Merge pull request #2014 from lazydroid/dev/lenik/fix_shadowed_variables
+* fix shadowed variable, take 2
+* fix shadowed variable
+* Allow access to the template parameter StackAllocator in the GenericDocument
+* Allow the macro RAPIDJSON_DEFAULT_STACK_ALLOCATOR to be used in any namespace
+* Allow the macro RAPIDJSON_DEFAULT_ALLOCATOR to be used in any namespace
+* Use modern cmake function export to generate target
 
 ## 2.0.0 - 2022-04-01
 * First WxT release
