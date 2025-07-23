@@ -407,7 +407,7 @@ private:
 
     static inline void* AlignBuffer(void* buf, size_t &size)
     {
-        RAPIDJSON_NOEXCEPT_ASSERT(buf != 0);
+        RAPIDJSON_NOEXCEPT_ASSERT(buf != nullptr);
         const uintptr_t mask = sizeof(void*) - 1;
         const uintptr_t ubuf = reinterpret_cast<uintptr_t>(buf);
         if (RAPIDJSON_UNLIKELY(ubuf & mask)) {
