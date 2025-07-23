@@ -118,6 +118,7 @@ TEST(SchemaValidator, Hasher) {
 #define VALIDATE_(schema, json, expected, expected2) \
 {\
     EXPECT_TRUE(expected2 == schema.GetError().ObjectEmpty());\
+    EXPECT_TRUE(schema.IsSupportedSpecification());\
     SchemaValidator validator(schema);\
     Document d;\
     /*printf("\n%s\n", json);*/\
@@ -156,6 +157,7 @@ TEST(SchemaValidator, Hasher) {
     flags, SchemaValidatorType, PointerType) \
 {\
     EXPECT_TRUE(schema.GetError().ObjectEmpty());\
+    EXPECT_TRUE(schema.IsSupportedSpecification());\
     SchemaValidatorType validator(schema);\
     validator.SetValidateFlags(flags);\
     Document d;\
@@ -2151,9 +2153,13 @@ public:
     }
 
     virtual const SchemaDocumentType* GetRemoteDocument(const char* uri, SizeType length) {
+        //printf("GetRemoteDocument : %s\n", uri);
         for (size_t i = 0; i < kCount; i++)
-            if (typename SchemaDocumentType::SValue(uri, length) == sd_[i]->GetURI())
+            if (typename SchemaDocumentType::GValue(uri, length) == sd_[i]->GetURI()) {
+                //printf("Matched document");
                 return sd_[i];
+            }
+        //printf("No matched document");
         return 0;
     }
 
@@ -2987,12 +2993,350 @@ TEST(SchemaValidator, DuplicateKeyword) {
 
 // SchemaDocument tests
 
+// Specification (schema draft, open api version)
+TEST(SchemaValidator, Schema_SupportedNotObject) {
+    Document sd;
+    sd.Parse("true");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedNoSpec) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedNoSpecStatic) {
+    typedef GenericSchemaDocument<Value, MemoryPoolAllocator<> > SchemaDocumentType;
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    Specification spec = SchemaDocumentType::GetSpecification(sd);
+    ASSERT_FALSE(spec.IsSupported());
+    ASSERT_TRUE(spec.draft == kDraftNone);
+    ASSERT_TRUE(spec.oapi == kVersionNone);
+}
+
+TEST(SchemaValidator, Schema_SupportedDraft5Static) {
+    typedef GenericSchemaDocument<Value, MemoryPoolAllocator<> > SchemaDocumentType;
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-05/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    Specification spec = SchemaDocumentType::GetSpecification(sd);
+    ASSERT_TRUE(spec.IsSupported());
+    ASSERT_TRUE(spec.draft == kDraft05);
+    ASSERT_TRUE(spec.oapi == kVersionNone);
+}
+
+TEST(SchemaValidator, Schema_SupportedDraft4) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-04/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedDraft4NoFrag) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-04/schema\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedDraft5) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-05/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft05);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedDraft5NoFrag) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-05/schema\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft05);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_IgnoreDraftEmbedded) {
+    Document sd;
+    sd.Parse("{\"root\": {\"$schema\":\"http://json-schema.org/draft-05/schema#\", \"type\": \"integer\"}}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, SchemaDocument::PointerType("/root"));
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedDraftOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kDraft04));
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_UnknownDraftOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kDraftUnknown));
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraftUnknown);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraftOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kDraft03));
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft03);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnknownDraft) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-xxx/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraftUnknown);
+     ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+   SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnknownDraftNotString) {
+    Document sd;
+    sd.Parse("{\"$schema\": 4, \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraftUnknown);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraft3) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-03/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft03);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraft6) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-06/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft06);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraft7) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"http://json-schema.org/draft-07/schema#\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft07);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraft2019_09) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"https://json-schema.org/draft/2019-09/schema\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft2019_09);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedDraft2020_12) {
+    Document sd;
+    sd.Parse("{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\", \"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft2020_12);
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionNone);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_SupportedVersion20Static) {
+    typedef GenericSchemaDocument<Value, MemoryPoolAllocator<> > SchemaDocumentType;
+    Document sd;
+    sd.Parse("{\"swagger\":\"2.0\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    Specification spec = SchemaDocumentType::GetSpecification(sd);
+    ASSERT_TRUE(spec.IsSupported());
+    ASSERT_TRUE(spec.draft == kDraft04);
+    ASSERT_TRUE(spec.oapi == kVersion20);
+}
+
+TEST(SchemaValidator, Schema_SupportedVersion20) {
+    Document sd;
+    sd.Parse("{\"swagger\":\"2.0\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersion20);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedVersion30x) {
+    Document sd;
+    sd.Parse("{\"openapi\":\"3.0.0\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersion30);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft05);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_SupportedVersionOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kVersion20));
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersion20);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    EXPECT_TRUE(s.GetError().ObjectEmpty());
+}
+
+TEST(SchemaValidator, Schema_UnknownVersionOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kVersionUnknown));
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionUnknown);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedVersionOverride) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kVersion31));
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersion31);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft2020_12);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnknownVersion) {
+    Document sd;
+    sd.Parse("{\"openapi\":\"1.0\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionUnknown);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnknownVersionShort) {
+    Document sd;
+    sd.Parse("{\"openapi\":\"3.0.\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionUnknown);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnknownVersionNotString) {
+    Document sd;
+    sd.Parse("{\"swagger\": 2}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersionUnknown);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft04);
+    SCHEMAERROR(s, "{\"SpecUnknown\":{\"errorCode\":10,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_UnsupportedVersion31) {
+    Document sd;
+    sd.Parse("{\"openapi\":\"3.1.0\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_FALSE(s.IsSupportedSpecification());
+    ASSERT_TRUE(s.GetSpecification().oapi == kVersion31);
+    ASSERT_TRUE(s.GetSpecification().draft == kDraft2020_12);
+    SCHEMAERROR(s, "{\"SpecUnsupported\":{\"errorCode\":11,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, Schema_DraftAndVersion) {
+    Document sd;
+    sd.Parse("{\"swagger\": \"2.0\", \"$schema\": \"http://json-schema.org/draft-04/schema#\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    ASSERT_TRUE(s.IsSupportedSpecification());
+    SCHEMAERROR(s, "{\"SpecIllegal\":{\"errorCode\":12,\"instanceRef\":\"#\"}}");
+}
+
 TEST(SchemaValidator, Schema_StartUnknown) {
     Document sd;
     sd.Parse("{\"type\": \"integer\"}");
     ASSERT_FALSE(sd.HasParseError());
     SchemaDocument s(sd, 0, 0, 0, 0, SchemaDocument::PointerType("/nowhere"));
     SCHEMAERROR(s, "{\"StartUnknown\":{\"errorCode\":1,\"instanceRef\":\"#\", \"value\":\"#/nowhere\"}}");
+}
+
+TEST(SchemaValidator, Schema_MultipleErrors) {
+    Document sd;
+    sd.Parse("{\"swagger\": \"foo\", \"$schema\": \"bar\"}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s(sd);
+    SCHEMAERROR(s, "{ \"SpecUnknown\": {\"errorCode\":10,\"instanceRef\":\"#\"},"
+                   "  \"SpecIllegal\": {\"errorCode\":12,\"instanceRef\":\"#\"}"
+                   "}");
 }
 
 // $ref is a non-JSON pointer fragment - not allowed when OpenAPI
@@ -3105,6 +3449,126 @@ TEST(SchemaValidator, Schema_RefCyclical) {
     SCHEMAERROR(s, "{\"RefCyclical\":{\"errorCode\":6,\"instanceRef\":\"#/properties/cyclic_target\",\"value\":\"#/properties/cyclic_source\"}}");
 }
 
+TEST(SchemaValidator, Schema_ReadOnlyAndWriteOnly) {
+    Document sd;
+    sd.Parse("{\"type\": \"integer\", \"readOnly\": true, \"writeOnly\": true}");
+    ASSERT_FALSE(sd.HasParseError());
+    SchemaDocument s1(sd, 0, 0, 0, 0, 0, Specification(kDraft04));
+    EXPECT_TRUE(s1.GetError().ObjectEmpty());
+    SchemaDocument s2(sd, 0, 0, 0, 0, 0, Specification(kVersion30));
+    SCHEMAERROR(s2, "{\"ReadOnlyAndWriteOnly\":{\"errorCode\":13,\"instanceRef\":\"#\"}}");
+}
+
+TEST(SchemaValidator, ReadOnlyWhenWriting) {
+    Document sd;
+    sd.Parse(
+        "{"
+        "    \"type\":\"object\","
+        "    \"properties\": {"
+        "        \"rprop\" : {"
+        "            \"type\": \"string\","
+        "            \"readOnly\": true"
+        "        }"
+        "    }"
+        "}");
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kVersion20));
+    VALIDATE(s, "{ \"rprop\": \"hello\" }", true);
+    INVALIDATE_(s, "{ \"rprop\": \"hello\" }", "/properties/rprop", "readOnly", "/rprop",
+        "{ \"readOnly\": {"
+        "    \"errorCode\": 26, \"instanceRef\": \"#/rprop\", \"schemaRef\": \"#/properties/rprop\""
+        "  }"
+        "}",
+        kValidateDefaultFlags | kValidateWriteFlag, SchemaValidator, Pointer);
+}
+
+TEST(SchemaValidator, WriteOnlyWhenReading) {
+    Document sd;
+    sd.Parse(
+        "{"
+        "    \"type\":\"object\","
+        "    \"properties\": {"
+        "        \"wprop\" : {"
+        "            \"type\": \"boolean\","
+        "            \"writeOnly\": true"
+        "        }"
+        "    }"
+        "}");
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, Specification(kVersion30));
+    VALIDATE(s, "{ \"wprop\": true }", true);
+    INVALIDATE_(s, "{ \"wprop\": true }", "/properties/wprop", "writeOnly", "/wprop",
+        "{ \"writeOnly\": {"
+        "    \"errorCode\": 27, \"instanceRef\": \"#/wprop\", \"schemaRef\": \"#/properties/wprop\""
+        "  }"
+        "}",
+        kValidateDefaultFlags | kValidateReadFlag, SchemaValidator, Pointer);
+}
+
+TEST(SchemaValidator, NullableTrue) {
+    Document sd;
+    sd.Parse("{\"type\": \"string\", \"nullable\": true}");
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, kVersion20);
+
+    VALIDATE(s, "\"hello\"", true);
+    INVALIDATE(s, "null", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"null\""
+        "}}");
+    INVALIDATE(s, "false", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"boolean\""
+        "}}");
+
+    SchemaDocument s30(sd, 0, 0, 0, 0, 0, kVersion30);
+
+    VALIDATE(s30, "\"hello\"", true);
+    VALIDATE(s30, "null", true);
+    INVALIDATE(s30, "false", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"null\", \"string\"], \"actual\": \"boolean\""
+        "}}");
+}
+
+TEST(SchemaValidator, NullableFalse) {
+    Document sd;
+    sd.Parse("{\"type\": \"string\", \"nullable\": false}");
+    SchemaDocument s(sd, 0, 0, 0, 0, 0, kVersion20);
+
+    VALIDATE(s, "\"hello\"", true);
+    INVALIDATE(s, "null", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"null\""
+        "}}");
+    INVALIDATE(s, "false", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"boolean\""
+        "}}");
+
+    SchemaDocument s30(sd, 0, 0, 0, 0, 0, kVersion30);
+
+    VALIDATE(s30, "\"hello\"", true);
+    INVALIDATE(s, "null", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"null\""
+        "}}");
+    INVALIDATE(s30, "false", "", "type", "",
+        "{ \"type\": {"
+        "    \"errorCode\": 20,"
+        "    \"instanceRef\": \"#\", \"schemaRef\": \"#\","
+        "    \"expected\": [\"string\"], \"actual\": \"boolean\""
+        "}}");
+}
 
 #if defined(_MSC_VER) || defined(__clang__)
 RAPIDJSON_DIAG_POP
