@@ -176,8 +176,8 @@ public:
         baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)()),
         shared_(static_cast<SharedData*>(baseAllocator_ ? baseAllocator_->Malloc(SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER) : 0))
     {
-        RAPIDJSON_ASSERT(baseAllocator_ != 0);
-        RAPIDJSON_ASSERT(shared_ != 0);
+        RAPIDJSON_ASSERT(baseAllocator_ != nullptr);
+        RAPIDJSON_ASSERT(shared_ != nullptr);
         if (baseAllocator) {
             shared_->ownBaseAllocator = 0;
         }

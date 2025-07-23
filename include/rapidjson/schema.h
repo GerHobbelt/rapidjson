@@ -1474,7 +1474,7 @@ private:
             context.hasher = context.factory.CreateHasher();
 
         if (validatorCount_) {
-            RAPIDJSON_ASSERT(context.validators == 0);
+            RAPIDJSON_ASSERT(context.validators == nullptr);
             context.validators = static_cast<ISchemaValidator**>(context.factory.MallocState(sizeof(ISchemaValidator*) * validatorCount_));
             std::memset(context.validators, 0, sizeof(ISchemaValidator*) * validatorCount_);
             context.validatorCount = validatorCount_;
@@ -1898,7 +1898,7 @@ public:
             SchemaErrorValue(kSchemaErrorStartUnknown, PointerType(), sb.GetString(), static_cast<SizeType>(sb.GetSize() / sizeof(Ch)));
         }
 
-        RAPIDJSON_ASSERT(root_ != 0);
+        RAPIDJSON_ASSERT(root_ != nullptr);
 
         schemaRef_.ShrinkToFit(); // Deallocate all memory for ref
     }

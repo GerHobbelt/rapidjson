@@ -101,14 +101,14 @@ public:
     bool Double(double d)       { PrettyPrefix(kNumberType); return Base::EndValue(Base::WriteDouble(d)); }
 
     bool RawNumber(const Ch* str, SizeType length, bool copy = false) {
-        RAPIDJSON_ASSERT(str != 0);
+        RAPIDJSON_ASSERT(str != nullptr);
         (void)copy;
         PrettyPrefix(kNumberType);
         return Base::EndValue(Base::WriteString(str, length));
     }
 
     bool String(const Ch* str, SizeType length, bool copy = false) {
-        RAPIDJSON_ASSERT(str != 0);
+        RAPIDJSON_ASSERT(str != nullptr);
         (void)copy;
         PrettyPrefix(kStringType);
         return Base::EndValue(Base::WriteString(str, length));

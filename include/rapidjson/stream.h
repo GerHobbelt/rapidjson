@@ -196,7 +196,7 @@ struct GenericInsituStringStream {
     size_t Tell() { return static_cast<size_t>(src_ - head_); }
 
     // Write
-    void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+    void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != nullptr); *dst_++ = c; }
 
     Ch* PutBegin() { return dst_ = src_; }
     size_t PutEnd(Ch* begin) { return static_cast<size_t>(dst_ - begin); }

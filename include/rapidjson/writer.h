@@ -196,14 +196,14 @@ public:
     bool Double(double d)       { Prefix(kNumberType); return EndValue(WriteDouble(d)); }
 
     bool RawNumber(const Ch* str, SizeType length, bool copy = false) {
-        RAPIDJSON_ASSERT(str != 0);
+        RAPIDJSON_ASSERT(str != nullptr);
         (void)copy;
         Prefix(kNumberType);
         return EndValue(WriteString(str, length));
     }
 
     bool String(const Ch* str, SizeType length, bool copy = false) {
-        RAPIDJSON_ASSERT(str != 0);
+        RAPIDJSON_ASSERT(str != nullptr);
         (void)copy;
         Prefix(kStringType);
         return EndValue(WriteString(str, length));

@@ -397,8 +397,8 @@ private:
     // Copy a part from one GenericUri to another
     // Return the pointer to the next part to be copied to
     Ch* CopyPart(Ch* to, Ch* from, std::size_t len) {
-        RAPIDJSON_ASSERT(to != 0);
-        RAPIDJSON_ASSERT(from != 0);
+        RAPIDJSON_ASSERT(to != nullptr);
+        RAPIDJSON_ASSERT(from != nullptr);
         std::memcpy(to, from, len * sizeof(Ch));
         to[len] = '\0';
         Ch* next = to + len + 1;
