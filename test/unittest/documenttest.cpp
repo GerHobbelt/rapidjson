@@ -413,6 +413,38 @@ TEST(Document, UTF16_Document) {
     EXPECT_EQ(0, memcmp(L"Wed Oct 30 17:13:20 +0000 2012", s.GetString(), (s.GetStringLength() + 1) * sizeof(wchar_t)));
 }
 
+TEST(Document, ReplaceNullsWriter) {
+    Value key, value;
+    key.SetString("f\0oo", 4);
+    value.SetString("ba\0r", 4);
+
+    Document doc;
+    doc.SetObject();
+    doc.AddMember(key, value, doc.GetAllocator());
+
+    StringBuffer buffer;
+    Writer<StringBuffer, UTF8<>, UTF8<>, CrtAllocator, kWriteReplaceNullChars> writer(buffer);
+    doc.Accept(writer);
+
+    EXPECT_STREQ("{\"f�oo\":\"ba�r\"}", buffer.GetString());
+}
+
+TEST(Document, ReplaceNullsReader) {
+    Value key, value;
+    key.SetString("f\0oo", 4);
+    value.SetString("ba\0r", 4);
+
+    Document doc;
+    doc.Parse<kParseReplaceNullChars>("{\"f�oo\":\"ba�r\"}");
+
+    ASSERT_FALSE(doc.HasParseError());
+    ASSERT_TRUE(doc.IsObject());
+    Document::ConstMemberIterator iterator = doc.FindMember(key);
+    ASSERT_NE(doc.MemberEnd(), iterator);
+    EXPECT_EQ(key, iterator->name);
+    EXPECT_EQ(value, iterator->value);
+}
+
 #if RAPIDJSON_HAS_CXX11_RVALUE_REFS
 
 #if 0 // Many old compiler does not support these. Turn it off temporaily.
